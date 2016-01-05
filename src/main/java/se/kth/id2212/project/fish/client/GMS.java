@@ -41,8 +41,6 @@ public class GMS implements Runnable {
             startGMS();
         }
 
-        // Add myself to group member list
-        groupMembers.add(myAddress);
 
 
     }
@@ -50,6 +48,8 @@ public class GMS implements Runnable {
     private void startGMS() {
         System.out.println("Starting GMS service...");
         myAddress = new ClientAddress(DEFAULT_CLIENT_ADDRESS, port);
+        // Add myself to group member list
+        groupMembers.add(myAddress);
         startAcceptingMessages();
 
     }
@@ -89,24 +89,29 @@ public class GMS implements Runnable {
             Message m = (Message) in.readObject();
             if(m.getDescriptor().equals(MessageDescriptor.ADD_OK)) {
                 System.out.println("   * Connection established to peer: " + clientAddress.getIp() + ":" + clientAddress.getPort());
+
+                // Add first contact to socket list
+                groupMemberSockets.put(clientAddress, socket);
             }
+
+
+            // Start accepting connections
+            startAcceptingMessages();
 
             Socket peerSocket;
             for(ClientAddress member : groupMembers) {
 
                 if(sameClient(member, clientAddress)) {
-                    break;
+                    continue;
                 }
-
-                System.out.println("HEJ!");
 
                 //Open socket to group member
                 peerSocket = new Socket(member.getIp(), member.getPort());
 
-                //Add group member to group member list
+                //Add group member to group member socket list
                 groupMemberSockets.put(member, peerSocket);
-                ObjectOutputStream outS = new ObjectOutputStream(socket.getOutputStream());
-                ObjectInputStream inS = new ObjectInputStream(socket.getInputStream());
+                ObjectOutputStream outS = new ObjectOutputStream(peerSocket.getOutputStream());
+                ObjectInputStream inS = new ObjectInputStream(peerSocket.getInputStream());
 
                 //Send ADD message to member
                 System.out.println("   * Sending ADD request");
@@ -127,6 +132,9 @@ public class GMS implements Runnable {
             e.printStackTrace();
         }
 
+        // Add myself to group member list
+        groupMembers.add(myAddress);
+
 
     }
 
@@ -144,7 +152,10 @@ public class GMS implements Runnable {
         while(!portFound) {
 
             for(ClientAddress member : groupMembers) {
-                portTaken = (member.getPort() == port) ? true : false;
+                if(member.getPort() == port) {
+                    portTaken = true;
+                    break;
+                }
             }
 
             if(portTaken) {
@@ -158,17 +169,18 @@ public class GMS implements Runnable {
     }
 
     private void startAcceptingMessages() {
-        // Accept incoming GMS message requests
-        try {
-            ServerSocket serverSocket = new ServerSocket(port);
-            System.out.println("   * Accepting connections");
-            for (; ; ) {
-                getClientThread(serverSocket.accept()).start();
+        new Thread(() -> {
+            // Accept incoming GMS message requests
+            try {
+                ServerSocket serverSocket = new ServerSocket(port);
+                System.out.println("   * Accepting connections");
+                for (; ; ) {
+                    getClientThread(serverSocket.accept()).start();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        }).start();
     }
 
     private Thread getClientThread(Socket clientSocket) throws IOException {
@@ -186,25 +198,29 @@ public class GMS implements Runnable {
                     Message m = (Message) in.readObject();
                     switch(m.getDescriptor()) {
                         case ADD:
-                            System.out.println("Received ADD request");
+                            System.out.println("   * Received ADD request");
                             // Add member to group list
                             peerAddress = (ClientAddress) m.getContent();
+                            groupMembers.add(peerAddress);
                             // Connect to member and add member to group socket list
                             peerSocket = new Socket(peerAddress.getIp(), peerAddress.getPort());
                             groupMemberSockets.put(peerAddress, peerSocket);
                             out.writeObject(new Message(MessageDescriptor.ADD_OK, null));
+                            System.out.println("   * Connection established to peer: " + peerAddress.getIp() + ":" + peerAddress.getPort());
                             break;
                         case ADD_JOIN:
                             // SPECIAL CASE FOR ADD BETWEEN PEER CONNTECTING, who just did a join, TO GMS AND HOSTING PEER.
-                            System.out.println("Received ADD_JOIN request");
+                            System.out.println("   * Received ADD_JOIN request");
                             peerAddress = (ClientAddress) m.getContent();
+                            groupMembers.add(peerAddress);
                             // Connect to member and add member to group socket list
                             groupMemberSockets.put(peerAddress, clientSocket);
                             out.writeObject(new Message(MessageDescriptor.ADD_OK, null));
+                            System.out.println("   * Connection established to peer: " + peerAddress.getIp() + ":" + peerAddress.getPort());
                             break;
 
                         case JOIN:
-                            System.out.println("Received JOIN request");
+                            System.out.println("   * Received JOIN request");
                             // Send Member list to joining peer
                             out.writeObject(groupMembers);
                             out.flush();
