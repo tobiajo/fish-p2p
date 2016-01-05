@@ -23,6 +23,7 @@ public class Client {
 
 
     private String sharedFilePath, downloadPath, serverAddress;
+    private boolean gmsInitiator = true;
     private int serverPort;
     private Socket serverSocket;
     private ObjectInputStream inS;
@@ -37,6 +38,7 @@ public class Client {
         this.downloadPath = downloadPath;
         this.serverAddress = serverAddress;
         this.serverPort = serverPort;
+
     }
 
     public void run() {
