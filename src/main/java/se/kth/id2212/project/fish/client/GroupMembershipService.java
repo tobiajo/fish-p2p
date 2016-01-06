@@ -1,7 +1,5 @@
-package se.kth.id2212.project.fish.client.gms;
+package se.kth.id2212.project.fish.client;
 
-import se.kth.id2212.project.fish.client.Client;
-import se.kth.id2212.project.fish.client.ClientAddress;
 import se.kth.id2212.project.fish.common.Message;
 import se.kth.id2212.project.fish.common.MessageDescriptor;
 import se.kth.id2212.project.fish.common.ProtocolException;
@@ -9,33 +7,27 @@ import se.kth.id2212.project.fish.common.ProtocolException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class GroupMembershipService implements Runnable {
+public class GroupMembershipService {
 
-    private Client client;
     private int clientPort;
-    private ClientAddress anyMember;
     private HashSet<String> groupMembers;
 
-    public GroupMembershipService(Client client, int clientPort) {
-        this.client = client;
+    public GroupMembershipService(int clientPort) {
         this.clientPort = clientPort;
         groupMembers = new HashSet<>();
     }
 
-    public GroupMembershipService(Client client, int clientPort, ClientAddress anyMember) {
-        this.client = client;
+    public GroupMembershipService(int clientPort, ClientAddress anyMember) {
         this.clientPort = clientPort;
-        this.anyMember = anyMember;
         groupMembers = new HashSet<>();
+        joinGroup(anyMember);
     }
 
-    @Override
-    public void run() {
+    private void joinGroup(ClientAddress anyMember) {
         if (anyMember != null) {
             Message reply = request(new Message(MessageDescriptor.REQUEST_MEMBERS, null), anyMember);
             if (reply == null) {
@@ -46,19 +38,6 @@ public class GroupMembershipService implements Runnable {
             groupMembers.add(anyMember.toString());
             System.out.println("Members: " + groupMembers);
             broadcast(new Message(MessageDescriptor.ADD_ME, clientPort));
-        }
-
-        try {
-            System.out.println("Opening server port " + clientPort + "...");
-            ServerSocket serverSocket = new ServerSocket(clientPort);
-            synchronized (client) {
-                client.notify();
-            }
-            for (; ; ) {
-                new Thread(new RequestHandler(client, this, serverSocket.accept())).start();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 

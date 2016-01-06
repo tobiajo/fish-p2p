@@ -1,6 +1,5 @@
 package se.kth.id2212.project.fish.client;
 
-import se.kth.id2212.project.fish.client.gms.GroupMembershipService;
 import se.kth.id2212.project.fish.common.Message;
 import se.kth.id2212.project.fish.common.MessageDescriptor;
 import se.kth.id2212.project.fish.common.FileAddress;
@@ -37,17 +36,17 @@ public class Client {
     public void run() {
         if (anyGroupMember == null) {
             System.out.println("Creates a new group");
-            gms = new GroupMembershipService(this, localPort);
+            gms = new GroupMembershipService(localPort);
         } else {
             System.out.println("Joins an existing group");
-            gms = new GroupMembershipService(this, localPort, anyGroupMember);
+            gms = new GroupMembershipService(localPort, anyGroupMember);
         }
 
-        new Thread(gms).start();
+        new Thread(new RequestServer(gms, sharedFilePath, localPort)).start();
 
-        synchronized (this) {
+        synchronized (gms) {
             try {
-                wait();
+                gms.wait();
             } catch (InterruptedException e) {
                 // nothing
             }
@@ -55,25 +54,6 @@ public class Client {
 
         prompt();
         System.exit(0);
-    }
-
-    public ArrayList<String> getFileList() {
-        ArrayList<String> ret = new ArrayList<>();
-
-        File dir = new File(sharedFilePath);
-        dir.mkdir();
-        File[] files = dir.listFiles();
-        for (File f : files) {
-            if (f.isFile()) {
-                ret.add(f.getName());
-            }
-        }
-
-        return ret;
-    }
-
-    public String getSharedFilePath() {
-        return sharedFilePath;
     }
 
     private void prompt() {
