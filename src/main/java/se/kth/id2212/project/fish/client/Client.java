@@ -6,7 +6,6 @@ import se.kth.id2212.project.fish.common.FileAddress;
 import se.kth.id2212.project.fish.common.ProtocolException;
 
 import java.io.*;
-import java.net.Socket;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,13 +35,13 @@ public class Client {
     public void run() {
         if (anyGroupMember == null) {
             System.out.println("Creates a new group");
-            gms = new GroupMembershipService(localPort);
+            gms = new GroupMembershipService(sharedFilePath, localPort);
         } else {
             System.out.println("Joins an existing group");
-            gms = new GroupMembershipService(localPort, anyGroupMember);
+            gms = new GroupMembershipService(sharedFilePath, localPort, anyGroupMember);
         }
 
-        new Thread(new RequestServer(gms, sharedFilePath, localPort)).start();
+        new Thread(gms).start();
 
         synchronized (gms) {
             try {
@@ -82,7 +81,7 @@ public class Client {
         System.out.print("Query: ");
         String query = new Scanner(System.in).nextLine();
 
-        HashMap<ClientAddress, Message> replies = gms.broadcast(new Message(MessageDescriptor.QUERY, query));
+        HashMap<ClientAddress, Message> replies = gms.broadcast(new Message(MessageDescriptor.SEARCH, query));
 
         final int[] i = {0};
         ArrayList<FileAddress> matchedFiles = new ArrayList<>();
@@ -116,28 +115,13 @@ public class Client {
     }
 
     private void fetch(FileAddress fileAddress) throws IOException, ClassNotFoundException, ProtocolException {
-        // connect
-        Socket remoteClientSocket = new Socket(fileAddress.getIp(), fileAddress.getPort());
-        ObjectOutputStream outRC = new ObjectOutputStream(remoteClientSocket.getOutputStream());
-        outRC.flush();
-        ObjectInputStream inRC = new ObjectInputStream(remoteClientSocket.getInputStream());
-
-        // request
-        outRC.writeObject(new Message(MessageDescriptor.FETCH, fileAddress.getFile()));
-        System.out.println("Sent request");
-
-        // receive
+        System.out.println("Sending request...");
+        Message reply = gms.request(new Message(MessageDescriptor.FETCH, fileAddress.getFile()), new ClientAddress(fileAddress.getIp(), fileAddress.getPort()));
         File dir = new File(downloadPath);
         dir.mkdir();
         File file = new File(dir.getName() + File.separator + fileAddress.getFile());
-        byte[] data = (byte[]) inRC.readObject();
-        Files.write(file.toPath(), data);
+        Files.write(file.toPath(), (byte[]) reply.getContent());
         System.out.println("Received file");
-
-        // disconnect
-        inRC.close();
-        outRC.close();
-        remoteClientSocket.close();
     }
 
     public static void main(String[] args) {

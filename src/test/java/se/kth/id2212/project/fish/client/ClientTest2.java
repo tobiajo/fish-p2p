@@ -5,6 +5,6 @@ import java.net.UnknownHostException;
 
 public class ClientTest2 {
     public static void main(String[] args) throws UnknownHostException {
-        Client.main(new String[] {"shared2", "shared2", "7002", InetAddress.getLocalHost().getHostAddress(), "7001"});
+        Client.main(new String[]{"shared2", "shared2", "7002", InetAddress.getLocalHost().getHostAddress(), "7001"});
     }
 }
