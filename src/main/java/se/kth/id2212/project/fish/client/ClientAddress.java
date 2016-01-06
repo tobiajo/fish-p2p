@@ -12,6 +12,12 @@ public class ClientAddress implements Serializable {
         this.port = port;
     }
 
+    public ClientAddress(String ipColonPort) {
+        String[] split = ipColonPort.split(":");
+        this.ip = split[0];
+        this.port = Integer.parseInt(split[1]);
+    }
+
     public String getIp() {
         return ip;
     }

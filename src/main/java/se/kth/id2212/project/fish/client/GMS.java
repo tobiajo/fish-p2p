@@ -1,4 +1,4 @@
-package se.kth.id2212.project.fish.client;
+/*package se.kth.id2212.project.fish.client;
 
 import se.kth.id2212.project.fish.common.Message;
 import se.kth.id2212.project.fish.common.MessageDescriptor;
@@ -236,3 +236,4 @@ public class GMS implements Runnable {
         });
     }
 }
+*/

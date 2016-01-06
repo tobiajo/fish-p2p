@@ -1,8 +1,5 @@
-package se.kth.id2212.project.fish.client;
+/*package se.kth.id2212.project.fish.client;
 
-/**
- * Created by marcus on 05/01/16.
- */
 public class GMS2 {
     public static void main(String[] args) {
 
@@ -11,3 +8,4 @@ public class GMS2 {
 
     }
 }
+*/
