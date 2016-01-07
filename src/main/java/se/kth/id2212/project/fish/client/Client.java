@@ -58,7 +58,7 @@ public class Client {
     private void prompt() {
         System.out.println("\nFISH client ready.");
         for (boolean stop = false; !stop; ) {
-            System.out.print("\n1. Search\n2. Exit\n> ");
+            System.out.print("\n1. Search\n2. Members\n3. Exit\n> ");
             switch (new Scanner(System.in).nextLine()) {
                 case "1":
                     try {
@@ -68,6 +68,9 @@ public class Client {
                     }
                     break;
                 case "2":
+                    System.out.println(gms.getGroupMembers());
+                    break;
+                case "3":
                     stop = true;
                     break;
                 default:

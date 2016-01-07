@@ -100,6 +100,10 @@ public class GroupMembershipService implements Runnable {
         return reply;
     }
 
+    public HashSet<String> getGroupMembers() {
+        return groupMembers;
+    }
+
     private void joinGroup() {
         if (anyMember != null) {
             Message reply = request(new Message(MessageDescriptor.MEMBERS, null), anyMember);
